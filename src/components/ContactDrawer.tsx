@@ -1,6 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
 
 type ContactDrawerProps = {
   open: boolean;
@@ -8,27 +12,127 @@ type ContactDrawerProps = {
   routeName: string;
 };
 
+type ServiceType =
+  | "bi"
+  | "site"
+  | "sistema"
+  | "personalizado";
+
 const WHATSAPP_NUMBER = "5521983332112";
+
+const services = [
+  {
+    id: "bi" as ServiceType,
+    number: "01",
+    title: "Business Intelligence",
+    description: "Dashboards e análise de dados",
+  },
+  {
+    id: "site" as ServiceType,
+    number: "02",
+    title: "Site / Landing Page",
+    description: "Presença digital e páginas web",
+  },
+  {
+    id: "sistema" as ServiceType,
+    number: "03",
+    title: "Sistema Web",
+    description: "Soluções e ferramentas digitais",
+  },
+  {
+    id: "personalizado" as ServiceType,
+    number: "04",
+    title: "Solução personalizada",
+    description: "Uma necessidade fora das opções acima",
+  },
+];
+
+function getInitialService(
+  routeName: string
+): ServiceType | null {
+  const normalizedRoute =
+    routeName.toLowerCase();
+
+  if (
+    normalizedRoute.includes(
+      "business intelligence"
+    )
+  ) {
+    return "bi";
+  }
+
+  if (
+    normalizedRoute.includes(
+      "sob medida"
+    ) ||
+    normalizedRoute.includes(
+      "personalizada"
+    )
+  ) {
+    return "personalizado";
+  }
+
+  /*
+    "Desenvolvimento Web" pode significar
+    tanto site quanto sistema.
+
+    Por isso não escolhemos automaticamente
+    uma dessas duas opções.
+  */
+  return null;
+}
 
 export default function ContactDrawer({
   open,
   onClose,
   routeName,
 }: ContactDrawerProps) {
-  const [name, setName] = useState("");
-  const [contact, setContact] = useState("");
-  const [scenario, setScenario] = useState("");
+  const [service, setService] =
+    useState<ServiceType | null>(null);
+
+  const [name, setName] =
+    useState("");
+
+  const [contact, setContact] =
+    useState("");
+
+  const [scenario, setScenario] =
+    useState("");
 
   const [errors, setErrors] = useState({
+    service: "",
     name: "",
     contact: "",
     scenario: "",
   });
 
+  const selectedService =
+    services.find(
+      (item) => item.id === service
+    ) ?? null;
+
+  const activeServiceIndex =
+    services.findIndex(
+      (item) => item.id === service
+    );
+
   const formIsReady =
+    service !== null &&
     name.trim() !== "" &&
     contact.trim() !== "" &&
     scenario.trim() !== "";
+
+  /* =====================================================
+     SERVIÇO INICIAL DE ACORDO COM A ROTA
+  ====================================================== */
+
+  useEffect(() => {
+    if (!open) return;
+
+    setService(
+      getInitialService(routeName)
+    );
+  }, [open, routeName]);
 
   /* =====================================================
      COMPORTAMENTO DO PAINEL
@@ -40,9 +144,12 @@ export default function ContactDrawer({
     const previousOverflow =
       document.body.style.overflow;
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
-    function handleEscape(event: KeyboardEvent) {
+    function handleEscape(
+      event: KeyboardEvent
+    ) {
       if (event.key === "Escape") {
         onClose();
       }
@@ -70,10 +177,16 @@ export default function ContactDrawer({
 
   function validateForm() {
     const newErrors = {
+      service: "",
       name: "",
       contact: "",
       scenario: "",
     };
+
+    if (!service) {
+      newErrors.service =
+        "Escolha o serviço que você procura.";
+    }
 
     if (!name.trim()) {
       newErrors.name =
@@ -93,6 +206,7 @@ export default function ContactDrawer({
     setErrors(newErrors);
 
     return (
+      !newErrors.service &&
       !newErrors.name &&
       !newErrors.contact &&
       !newErrors.scenario
@@ -110,17 +224,17 @@ export default function ContactDrawer({
 
     const valid = validateForm();
 
-    if (!valid) {
+    if (!valid || !selectedService) {
       return;
     }
 
     const message = `
-Olá, AstroG! 
+Olá, AstroG!
 
 Quero conversar sobre um projeto.
 
-*Ponto de partida*
-${routeName}
+*Serviço*
+${selectedService.title}
 
 *Nome*
 ${name}
@@ -202,7 +316,9 @@ ${scenario}
           onSubmit={handleSubmit}
           className="flex h-full flex-col overflow-y-auto px-8 py-8 sm:px-12"
         >
-          {/* TOPO */}
+          {/* =================================================
+              TOPO
+          ================================================== */}
 
           <div className="flex items-center justify-between border-b border-[#0B132B]/15 pb-5">
             <p className="text-xs uppercase tracking-[0.35em] text-[#A78722]">
@@ -227,39 +343,264 @@ ${scenario}
             </button>
           </div>
 
-          {/* ROTA */}
+          {/* =================================================
+              ESCOLHA DO SERVIÇO
+          ================================================== */}
 
           <div className="mt-10">
-            <p className="text-xs uppercase tracking-[0.25em] text-[#0B132B]/35">
-              Seu ponto de partida
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-[#0B132B]/35">
+                  Seu ponto de partida
+                </p>
+
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em]">
+                  Qual serviço você procura?
+                </h2>
+              </div>
+
+              <span className="text-[0.6rem] uppercase tracking-[0.25em] text-[#0B132B]/25">
+                {service
+                  ? `${String(
+                      activeServiceIndex + 1
+                    ).padStart(2, "0")} / 04`
+                  : "— / 04"}
+              </span>
+            </div>
+
+            {/* ===============================================
+                ROTA DOS SERVIÇOS
+            ================================================ */}
+
+            <div className="relative mt-7">
+              {/* LINHA BASE */}
+              <div
+                className="
+                  absolute
+                  left-[7px]
+                  top-[27px]
+                  h-[228px]
+                  w-px
+                  bg-[#0B132B]/12
+                "
+              />
+
+              {/* RASTRO DOURADO */}
+              {service && (
+                <div
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-[7px]
+                    top-[27px]
+                    w-px
+                    bg-[#D4AF37]
+                    transition-[height]
+                    duration-500
+                    ease-out
+                  "
+                  style={{
+                    height:
+                      activeServiceIndex === 0
+                        ? "0px"
+                        : `${activeServiceIndex * 76}px`,
+                  }}
+                />
+              )}
+
+              {/* =============================================
+                  SERVIÇOS
+              ============================================== */}
+
+              <div className="relative">
+                {services.map(
+                  (item, index) => {
+                    const active =
+                      service === item.id;
+
+                    const passed =
+                      service !== null &&
+                      index <=
+                        activeServiceIndex;
+
+                    return (
+                      <button
+                        type="button"
+                        key={item.id}
+                        onClick={() => {
+                          setService(item.id);
+
+                          if (
+                            errors.service
+                          ) {
+                            setErrors(
+                              (previous) => ({
+                                ...previous,
+                                service: "",
+                              })
+                            );
+                          }
+                        }}
+                        className="
+                          group
+                          flex
+                          min-h-[76px]
+                          w-full
+                          items-center
+                          gap-5
+                          text-left
+                        "
+                      >
+                        {/* PONTO */}
+                        <span
+                          className={`
+                            relative
+                            z-10
+                            flex
+                            h-[15px]
+                            w-[15px]
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-full
+                            border
+                            transition-all
+                            duration-300
+
+                            ${
+                              active
+                                ? "border-[#D4AF37] bg-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.25)]"
+                                : passed
+                                  ? "border-[#D4AF37] bg-[#F4F0E7]"
+                                  : "border-[#0B132B]/25 bg-[#F4F0E7]"
+                            }
+                          `}
+                        >
+                          {!active && passed && (
+                            <span className="h-[5px] w-[5px] rounded-full bg-[#D4AF37]" />
+                          )}
+                        </span>
+
+                        {/* TEXTO */}
+                        <div className="flex flex-1 items-center justify-between gap-4 border-b border-[#0B132B]/10 py-4">
+                          <div>
+                            <span
+                              className={`
+                                text-[0.6rem]
+                                tracking-[0.28em]
+                                transition-colors
+
+                                ${
+                                  active
+                                    ? "text-[#A78722]"
+                                    : "text-[#0B132B]/30"
+                                }
+                              `}
+                            >
+                              {item.number}
+                            </span>
+
+                            <p
+                              className={`
+                                mt-1
+                                text-base
+                                font-medium
+                                transition-all
+                                duration-300
+
+                                ${
+                                  active
+                                    ? "translate-x-1 text-[#0B132B]"
+                                    : "text-[#0B132B]/60 group-hover:translate-x-1 group-hover:text-[#0B132B]"
+                                }
+                              `}
+                            >
+                              {item.title}
+                            </p>
+
+                            <p
+                              className={`
+                                mt-1
+                                text-xs
+                                transition-colors
+
+                                ${
+                                  active
+                                    ? "text-[#0B132B]/50"
+                                    : "text-[#0B132B]/30"
+                                }
+                              `}
+                            >
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <span
+                            className={`
+                              shrink-0
+                              transition-all
+                              duration-300
+
+                              ${
+                                active
+                                  ? "translate-x-0 text-[#A78722]"
+                                  : "-translate-x-1 text-[#0B132B]/20 group-hover:translate-x-0 group-hover:text-[#A78722]"
+                              }
+                            `}
+                          >
+                            →
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+
+            {errors.service && (
+              <p className="mt-3 text-xs text-[#9A5B45]">
+                {errors.service}
+              </p>
+            )}
+          </div>
+
+          {/* =================================================
+              INTRODUÇÃO
+          ================================================== */}
+
+          <div className="mt-10 border-t border-[#0B132B]/15 pt-9">
+            <p className="text-xs uppercase tracking-[0.25em] text-[#A78722]">
+              {selectedService
+                ? `${selectedService.number} / ${selectedService.title}`
+                : "Próxima coordenada"}
             </p>
 
-            <p className="mt-3 text-lg font-medium">
-              {routeName}
+            <h2 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
+              Conte um pouco
+
+              <span className="block text-[#0B132B]/30">
+                sobre o cenário.
+              </span>
+            </h2>
+
+            <p className="mt-6 max-w-md text-sm leading-7 text-[#0B132B]/55">
+              Não precisa chegar com escopo,
+              tecnologia ou estrutura definidos.
+              Comece pelo que você precisa
+              resolver.
             </p>
           </div>
 
-          {/* INTRODUÇÃO */}
-
-          <h2 className="mt-10 text-4xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-5xl">
-            Conte um pouco
-
-            <span className="block text-[#0B132B]/30">
-              sobre o cenário.
-            </span>
-          </h2>
-
-          <p className="mt-6 max-w-md text-sm leading-7 text-[#0B132B]/55">
-            Não precisa chegar com escopo, tecnologia
-            ou estrutura definidos. Comece pelo que
-            você precisa resolver.
-          </p>
-
-          {/* CAMPOS */}
+          {/* =================================================
+              CAMPOS
+          ================================================== */}
 
           <div className="mt-12 space-y-9">
+            {/* ===============================================
+                NOME
+            ================================================ */}
 
-            {/* NOME */}
             <div>
               <label
                 htmlFor="nome"
@@ -273,13 +614,17 @@ ${scenario}
                 type="text"
                 value={name}
                 onChange={(event) => {
-                  setName(event.target.value);
+                  setName(
+                    event.target.value
+                  );
 
                   if (errors.name) {
-                    setErrors((previous) => ({
-                      ...previous,
-                      name: "",
-                    }));
+                    setErrors(
+                      (previous) => ({
+                        ...previous,
+                        name: "",
+                      })
+                    );
                   }
                 }}
                 autoComplete="name"
@@ -305,13 +650,17 @@ ${scenario}
               )}
             </div>
 
-            {/* CONTATO */}
+            {/* ===============================================
+                CONTATO
+            ================================================ */}
+
             <div>
               <label
                 htmlFor="contato"
                 className="text-xs uppercase tracking-[0.25em] text-[#0B132B]/40"
               >
-                Como podemos falar com você?
+                Como podemos falar com
+                você?
               </label>
 
               <input
@@ -319,13 +668,19 @@ ${scenario}
                 type="text"
                 value={contact}
                 onChange={(event) => {
-                  setContact(event.target.value);
+                  setContact(
+                    event.target.value
+                  );
 
-                  if (errors.contact) {
-                    setErrors((previous) => ({
-                      ...previous,
-                      contact: "",
-                    }));
+                  if (
+                    errors.contact
+                  ) {
+                    setErrors(
+                      (previous) => ({
+                        ...previous,
+                        contact: "",
+                      })
+                    );
                   }
                 }}
                 placeholder="WhatsApp ou e-mail"
@@ -352,7 +707,10 @@ ${scenario}
               )}
             </div>
 
-            {/* CENÁRIO */}
+            {/* ===============================================
+                CENÁRIO
+            ================================================ */}
+
             <div>
               <label
                 htmlFor="cenario"
@@ -366,13 +724,19 @@ ${scenario}
                 rows={3}
                 value={scenario}
                 onChange={(event) => {
-                  setScenario(event.target.value);
+                  setScenario(
+                    event.target.value
+                  );
 
-                  if (errors.scenario) {
-                    setErrors((previous) => ({
-                      ...previous,
-                      scenario: "",
-                    }));
+                  if (
+                    errors.scenario
+                  ) {
+                    setErrors(
+                      (previous) => ({
+                        ...previous,
+                        scenario: "",
+                      })
+                    );
                   }
                 }}
                 placeholder="O que você gostaria de criar, melhorar ou resolver?"
@@ -402,7 +766,9 @@ ${scenario}
             </div>
           </div>
 
-          {/* CONTINUAR */}
+          {/* =================================================
+              CONTINUAR
+          ================================================== */}
 
           <div className="mt-auto pt-12">
             <button
