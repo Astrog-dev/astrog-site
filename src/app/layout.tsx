@@ -15,7 +15,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/*
+  Enquanto estivermos trabalhando localmente,
+  usamos localhost.
+
+  Quando publicarmos o site, configuramos
+  NEXT_PUBLIC_SITE_URL com o domínio oficial.
+*/
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+
   title: {
     default:
       "AstroG | Business Intelligence & Soluções Digitais",

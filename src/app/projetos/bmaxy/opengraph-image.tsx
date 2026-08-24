@@ -105,7 +105,7 @@ export default function OpenGraphImage() {
         <div
           style={{
             position: "relative",
-            zIndex: 10,
+            
 
             width: "710px",
             height: "100%",
