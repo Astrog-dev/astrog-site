@@ -30,6 +30,10 @@ const siteUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
+  verification: {
+  google: "Q6ZW8tMXZGfoyOq2Lst65wTUyhHPJEPnew8J9mQ3epY",
+  },
+
   title: {
     default:
       "AstroG | Business Intelligence & Soluções Digitais",
